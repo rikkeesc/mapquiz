@@ -7,6 +7,7 @@ import { writeFileSync } from "node:fs";
 import { geoCentroid } from "d3-geo";
 
 const byCcn3 = new Map(wc.filter((c) => c.ccn3).map((c) => [c.ccn3, c]));
+const byName = new Map(wc.map((c) => [c.name.common, c]));
 
 const BBOX = [-25, 34, 45, 71]; // west, south, east, north
 
@@ -40,7 +41,7 @@ function trimToBBox(f, bbox) {
 
 const all = feature(topo, topo.objects.countries).features
   .map((f) => {
-    const meta = byCcn3.get(String(f.id ?? ""));
+    const meta = byCcn3.get(String(f.id ?? "")) ?? byName.get(f.properties.name);
     if (!meta) return null;
     return {
       ...f,
@@ -77,6 +78,18 @@ const shapes = europe
   .join("");
 
 writeFileSync(
-  "../src/data/maps/europe.svg",
+  "src/data/maps/europe.svg",
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}"><rect width="${W}" height="${H}" fill="#16323c"/>${shapes}</svg>`,
 );
+
+const data = {
+  id: "europe",
+  viewBox: `0 0 ${W} ${H}`,
+  countries: europe.map((f) => ({
+    cca3: f.properties.cca3,
+    name: f.properties.name,
+    d: path(f),
+  })),
+};
+
+writeFileSync("src/data/maps/europe.json", JSON.stringify(data));

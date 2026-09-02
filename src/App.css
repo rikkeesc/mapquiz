@@ -182,3 +182,15 @@
     border-right-color: var(--border);
   }
 }
+
+.country {
+  fill: #003151;
+  stroke: #000000;
+
+  &:hover {
+    fill: #598baf;
+    cursor: pointer;
+  }
+}
+
+
