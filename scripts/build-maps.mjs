@@ -10,8 +10,8 @@ const byCcn3 = new Map(wc.filter((c) => c.ccn3).map((c) => [c.ccn3, c]));
 const byName = new Map(wc.map((c) => [c.name.common, c]));
 
 const BBOX = [-25, 34, 45, 71]; // west, south, east, north
-
 const W = 900, H = 620;
+const minSize = 10;
 
 const lonOverlaps = (w, e, pw, pe) =>
   pw <= pe
@@ -42,7 +42,7 @@ function trimToBBox(f, bbox) {
 const all = feature(topo, topo.objects.countries).features
   .map((f) => {
     const meta = byCcn3.get(String(f.id ?? "")) ?? byName.get(f.properties.name);
-    if (!meta) return null;
+    if (!meta || meta.independent === false) return null;
     return {
       ...f,
       properties: {
@@ -57,21 +57,22 @@ const all = feature(topo, topo.objects.countries).features
   })
   .filter(Boolean);
 
-const europe = all
+  const corners = (w, s, e, n) => ({
+    type: "MultiPoint",
+    coordinates: [[w, s], [e, s], [e, n], [w, n]],
+  });
+  
+  const proj = geoMercator().fitExtent([[16, 16], [W - 16, H - 16]], corners(...BBOX));
+  const path = geoPath(proj);
+
+const trimmed = all
   .filter((f) => f.properties.region === "Europe")
   .map((f) => trimToBBox(f, BBOX))
   .filter(Boolean);
 
-
-const corners = (w, s, e, n) => ({
-  type: "MultiPoint",
-  coordinates: [[w, s], [e, s], [e, n], [w, n]],
-});
-
-const proj = geoMercator().fitExtent([[16, 16], [W - 16, H - 16]], corners(...BBOX));
-const path = geoPath(proj);
-
-
+const europe = trimmed.filter((f) => path.area(f) >= minSize);
+const dropped = trimmed.filter((f) => path.area(f) < minSize);
+console.log("dropped (too small):", dropped.map((f) => f.properties.name));
 
 const shapes = europe
   .map((f) => `<path d="${path(f)}" fill="#e8e0cf" stroke="#16323c" stroke-width="0.6"/>`)

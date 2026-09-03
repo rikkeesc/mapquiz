@@ -14,8 +14,15 @@ function App() {
 
   return (
     <div>
-      <div>{state.current ? nameOf.get(state.current) : null}</div>
-      <CountryMap map={europe} onSelect={(cca3) => dispatch({ type: "guess", cca3 })} />
+      <div>
+        {state.current ? nameOf.get(state.current) : null}
+        <button onClick={() => dispatch({type: "restart", countries: codes})}>Restart</button>  
+      </div>
+      <CountryMap 
+        map={europe} 
+        onSelect={(cca3) => dispatch({ type: "guess", cca3 })} 
+        results={state.results}
+      />
     </div>
   )
 }
